@@ -156,16 +156,17 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
     <div className="flex h-full bg-[#09090b] overflow-hidden">
       {/* File Explorer Sidebar */}
       <motion.div 
-        animate={{ width: isSidebarOpen ? 220 : 0 }}
-        className="border-r border-[#27272a] flex flex-col bg-[#0c0c0e]"
+        animate={{ width: isSidebarOpen ? 240 : 0 }}
+        className="border-r border-[#1f1f23] flex flex-col bg-[#0c0c0e] shrink-0"
       >
-        <div className="p-3 flex items-center justify-between border-b border-[#27272a]">
-          <span className="text-[10px] font-bold text-[#52525b] uppercase tracking-widest">Explorer</span>
-          <div className="flex gap-1">
-            <button className="p-1 hover:bg-[#18181b] rounded text-[#52525b] hover:text-white transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
+        <div className="p-4 flex items-center justify-between border-b border-[#1f1f23]">
+          <div className="flex items-center gap-2">
+            <Folder className="w-4 h-4 text-zinc-500" />
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">Explorer</span>
           </div>
+          <button className="p-1.5 hover:bg-[#18181b] rounded-md text-zinc-500 hover:text-blue-400 transition-all">
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
           {files.map((node) => (
@@ -179,115 +180,166 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
         </div>
       </motion.div>
 
-      {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between h-10 bg-[#0c0c0e] border-b border-[#27272a] px-1 shrink-0">
-          <div className="flex items-center h-full gap-0.5 overflow-x-auto scrollbar-hide">
-            <TabButton 
-              active={activeTab === "preview"} 
-              icon={Eye} 
-              label="Preview" 
-              onClick={() => setActiveTab("preview")} 
-            />
-            <TabButton 
+      {/* Main Workspace Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#09090b]">
+        {/* Editor/Preview Header */}
+        <div className="flex items-center justify-between h-11 bg-[#0c0c0e] border-b border-[#1f1f23] px-2 shrink-0">
+          <div className="flex items-center h-full gap-1 overflow-x-auto scrollbar-hide">
+             <TabButton 
               active={activeTab === "code"} 
               icon={Code} 
               label="Editor" 
               onClick={() => setActiveTab("code")} 
             />
             <TabButton 
-              active={activeTab === "terminal"} 
-              icon={TerminalIcon} 
-              label="Terminal" 
-              onClick={() => setActiveTab("terminal")} 
+              active={activeTab === "preview"} 
+              icon={Eye} 
+              label="Preview" 
+              onClick={() => setActiveTab("preview")} 
             />
           </div>
           
-          <div className="flex items-center gap-2 pr-2">
+          <div className="flex items-center gap-2">
+            {currentFile && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-[#18181b] rounded-md border border-[#27272a]">
+                <File className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] text-zinc-400 truncate max-w-[200px] font-mono leading-none">{currentFile}</span>
+              </div>
+            )}
             {currentFile && activeTab === "code" && (
               <button 
                 onClick={handleSave}
-                className="flex items-center h-7 gap-1.5 px-3 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider transition-colors"
+                className="flex items-center h-7 gap-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider transition-all shadow-lg active:scale-95"
               >
-                <Save className="w-3 h-3" />
+                <Save className="w-3.5 h-3.5" />
                 Save
               </button>
             )}
             {previewUrl && activeTab === "preview" && (
-              <button 
-                onClick={() => setPreviewUrl(url => url ? `${url}?t=${Date.now()}` : null)}
-                className="p-1.5 hover:bg-[#18181b] rounded text-[#71717a]"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setPreviewUrl(url => url ? `${url}?t=${Date.now()}` : null)}
+                  className="p-1.5 hover:bg-[#18181b] rounded-md text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => window.open(previewUrl, "_blank")}
+                  className="p-1.5 hover:bg-[#18181b] rounded-md text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="flex-1 relative bg-[#09090b]">
-          <AnimatePresence mode="wait">
-            {activeTab === "preview" && (
-              <motion.div 
-                key="preview"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col"
-              >
-                {!previewUrl ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-[#52525b] gap-4">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-[11px] uppercase font-bold tracking-widest">Awaiting Bridge Connection...</p>
-                  </div>
-                ) : (
-                  <iframe 
-                    src={previewUrl} 
-                    className="flex-1 border-none bg-white"
-                  />
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === "code" && (
-              <motion.div 
-                key="code"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col bg-[#09090b]"
-              >
-                {currentFile ? (
-                  <div className="flex h-full">
-                    <div className="w-10 bg-[#0c0c0e] border-r border-[#27272a] flex flex-col items-center pt-4 text-[11px] text-[#52525b] font-mono select-none">
-                      {fileContent.split("\n").map((_, i) => (
-                        <div key={i} className="h-5 leading-5">{i + 1}</div>
-                      ))}
+        {/* Content Pane and Bottom Panel Container */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Main Content Pane */}
+          <div className="flex-1 relative bg-[#09090b] overflow-hidden">
+            <AnimatePresence mode="wait">
+              {activeTab === "preview" && (
+                <motion.div 
+                  key="preview"
+                  initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}
+                  className="absolute inset-0 flex flex-col"
+                >
+                  {!previewUrl ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-[#52525b] gap-6 bg-[#09090b]">
+                      <div className="relative">
+                        <Loader2 className="w-10 h-10 animate-spin text-zinc-800" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Eye className="w-4 h-4 text-zinc-600" />
+                        </div>
+                      </div>
+                      <div className="text-center space-y-1">
+                        <p className="text-[11px] uppercase font-bold tracking-[0.2em] text-zinc-600">Initializing Bridge</p>
+                        <p className="text-[9px] text-zinc-700 font-mono">Waiting for WebContainer runtime...</p>
+                      </div>
                     </div>
-                    <textarea
-                      value={fileContent}
-                      onChange={(e) => setFileContent(e.target.value)}
-                      spellCheck={false}
-                      className="flex-1 bg-transparent text-[#a1a1aa] p-4 font-mono text-[13px] leading-relaxed resize-none focus:outline-none"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="text-[#52525b] text-[11px] uppercase font-bold tracking-widest">Select file to synthesize</p>
-                  </div>
-                )}
-              </motion.div>
-            )}
+                  ) : (
+                    <div className="flex-1 bg-white rounded-lg m-2 overflow-hidden shadow-2xl relative border border-zinc-800/10">
+                      <iframe 
+                        src={previewUrl} 
+                        className="w-full h-full border-none"
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              )}
 
-            {activeTab === "terminal" && (
-              <motion.div 
-                key="terminal"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-[#0c0c0e] flex flex-col"
-              >
-                <div className="h-8 border-b border-[#27272a] px-3 flex items-center justify-between shrink-0">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#52525b]">Terminal Output</span>
-                  <span className="text-[10px] font-mono text-[#52525b]">xterm.js @ node 20.x</span>
-                </div>
-                <div ref={terminalRef} className="flex-1 p-3" />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {activeTab === "code" && (
+                <motion.div 
+                  key="code"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex flex-col bg-[#09090b]"
+                >
+                  {currentFile ? (
+                    <div className="flex h-full overflow-hidden">
+                      <div className="w-12 bg-[#0c0c0e] border-r border-[#1f1f23] flex flex-col items-center pt-4 text-[11px] text-[#3f3f46] font-mono select-none flex-none overflow-hidden">
+                        {fileContent.split("\n").map((_, i) => (
+                          <div key={i} className="h-6 leading-6 w-full text-center hover:bg-zinc-800/20 transition-colors">{i + 1}</div>
+                        ))}
+                      </div>
+                      <textarea
+                        value={fileContent}
+                        onChange={(e) => setFileContent(e.target.value)}
+                        spellCheck={false}
+                        className="flex-1 bg-transparent text-[#d4d4d8] p-4 font-mono text-[14px] leading-[1.6] resize-none focus:outline-none overflow-y-auto scrollbar-hide selection:bg-blue-500/30"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                      <div className="p-4 rounded-full bg-zinc-900/50 border border-dotted border-zinc-800">
+                        <Code className="w-8 h-8 text-zinc-700" />
+                      </div>
+                      <p className="text-zinc-600 text-[11px] uppercase font-bold tracking-[0.2em]">Select a file to begin coding</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom Pane (Terminal) */}
+          <div className={cn(
+             "h-[280px] border-t border-[#1f1f23] bg-[#0c0c0e] flex flex-col shrink-0 transition-all z-20",
+             activeTab === "terminal" ? "relative" : "invisible h-0"
+          )}>
+            <div className="h-9 border-b border-[#1f1f23] px-4 flex items-center justify-between shrink-0 bg-[#0c0c0e]/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <TerminalIcon className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Terminal Shell</span>
+              </div>
+              <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[9px] font-mono text-emerald-500/80 uppercase font-bold tracking-tighter">Live</span>
+                 </div>
+                 <div className="h-3 w-px bg-zinc-800 mx-1" />
+                 <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-tighter">node v20.x</span>
+              </div>
+            </div>
+            <div ref={terminalRef} className="flex-1 p-3 overflow-hidden terminal-container" />
+          </div>
+        </div>
+
+        {/* Status Bar */}
+        <div className="h-6 bg-[#0c0c0e] border-t border-[#1f1f23] px-3 flex items-center justify-between text-[10px] text-zinc-600 shrink-0 select-none">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 hover:text-zinc-400 transition-colors cursor-pointer group">
+              <Plus className="w-3 h-3 group-hover:rotate-90 transition-transform" />
+              <span>Project Nexus</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span>Main</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="font-mono">UTF-8</span>
+            <span className="font-mono">TypeScript React</span>
+          </div>
         </div>
       </div>
     </div>

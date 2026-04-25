@@ -9,7 +9,7 @@ import { ChatInterface } from "./components/ChatInterface";
 import { Workbench, WorkbenchRef } from "./components/Workbench";
 import { Message, FileNode, Step } from "./types";
 import { chatStream } from "./services/geminiService";
-import { Loader2, Terminal as TerminalIcon } from "lucide-react";
+import { Loader2, Terminal as TerminalIcon, Code, Search } from "lucide-react";
 import { cn } from "./lib/utils";
 
 function Root() {
@@ -140,16 +140,26 @@ function Root() {
           });
         }
 
+        // Match <thought>...</thought>
+        const thoughtRegex = /<thought>([\s\S]*?)<\/thought>/g;
+        let thoughtMatch = thoughtRegex.exec(assistantContent);
+        const thoughts = thoughtMatch ? thoughtMatch[1].trim() : "";
+
         setMessages(prev => prev.map(m => 
           m.id === assistantId ? { 
             ...m, 
             content: assistantContent
+              .replace(/<thought>[\s\S]*?<\/thought>/g, "")
               .replace(/<file path="[^"]+">[\s\S]*?<\/file>/g, "")
               .replace(/<delete path="[^"]+"\s*\/>/g, "")
               .replace(/<command>[\s\S]*?<\/command>/g, "")
-              .replace(/<thought>[\s\S]*?<\/thought>/g, "")
+              .replace(/<thought>[\s\S]*?$/g, "") // Handle incomplete tags
+              .replace(/<file path="[^"]*$/g, "")
+              .replace(/<delete path="[^"]*$/g, "")
+              .replace(/<command>[\s\S]*?$/g, "")
               .trim(), 
-            steps 
+            steps,
+            metadata: { ...m.metadata, thoughts }
           } : m
         ));
       }
@@ -268,26 +278,52 @@ function Root() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#09090b] text-[#a1a1aa] font-sans overflow-hidden border border-[#27272a]">
-      <header className="h-12 border-b border-[#27272a] bg-[#0c0c0e] flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-            <div className="w-3 h-3 border-2 border-white rounded-sm"></div>
+    <div className="flex flex-col h-screen w-screen bg-[#09090b] text-[#a1a1aa] font-sans overflow-hidden">
+      {/* Top Header Bar */}
+      <header className="h-10 border-b border-[#1f1f23] bg-[#0c0c0e] flex items-center justify-between px-3 shrink-0 select-none">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+              <Code className="w-3 h-3 text-white" />
+            </div>
+            <span className="text-[11px] font-bold text-white tracking-widest uppercase">Nexus<span className="text-zinc-600 font-normal">.AI</span></span>
           </div>
-          <span className="text-sm font-semibold text-white tracking-tight">NEXUS.AI <span className="text-[#71717a] font-normal italic">v1.0</span></span>
+          
+          <nav className="flex items-center gap-4 text-[10px] font-medium text-zinc-500 uppercase tracking-tighter">
+            <span className="hover:text-zinc-300 cursor-pointer transition-colors">File</span>
+            <span className="hover:text-zinc-300 cursor-pointer transition-colors">Edit</span>
+            <span className="hover:text-zinc-300 cursor-pointer transition-colors">Selection</span>
+            <span className="hover:text-zinc-300 cursor-pointer transition-colors">View</span>
+            <span className="hover:text-zinc-300 cursor-pointer transition-colors">Go</span>
+          </nav>
         </div>
+
+        <div className="flex-1 max-w-[400px] mx-4 relative group">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-600 group-focus-within:text-blue-500 transition-colors" />
+           <input 
+             type="text" 
+             placeholder="Search project..."
+             className="w-full h-7 bg-[#18181b] border border-[#27272a] rounded-md pl-9 pr-4 text-[11px] focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-zinc-700"
+           />
+        </div>
+
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-[#18181b] px-3 py-1 rounded border border-[#27272a]">
-            <div className={cn("w-2 h-2 rounded-full animate-pulse", status === "ready" ? "bg-green-500" : "bg-amber-500")} />
-            <span className="text-[11px] font-medium">WebContainer {status === "ready" ? "Active" : "Booting"}</span>
+          <div className="flex items-center gap-2 bg-[#18181b] px-2.5 py-1 rounded border border-[#27272a] group cursor-help transition-colors hover:bg-zinc-800">
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full", 
+              status === "ready" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-amber-500 animate-pulse"
+            )} />
+            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">Container: {status}</span>
           </div>
-          <button className="bg-white text-black text-[11px] font-bold px-4 py-1 rounded hover:bg-zinc-200 transition-colors uppercase tracking-wider">
+          <button className="h-7 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-[10px] font-bold px-4 rounded-md hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest active:scale-95 shadow-sm">
             Deploy App
           </button>
         </div>
       </header>
+
+      {/* Workspace Area */}
       <main className="flex-1 flex overflow-hidden">
-        <aside className="w-[340px] flex flex-col border-r border-[#27272a] bg-[#0c0c0e] shrink-0">
+        <aside className="w-[380px] flex flex-col border-r border-[#1f1f23] bg-[#0c0c0e] shrink-0">
           <ChatInterface 
             messages={messages} 
             isProcessing={isProcessing} 

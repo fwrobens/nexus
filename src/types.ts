@@ -29,4 +29,7 @@ export interface Message {
   content: string;
   steps?: Step[];
   timestamp: number;
+  metadata?: {
+    thoughts?: string;
+  };
 }
