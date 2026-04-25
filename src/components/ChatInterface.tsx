@@ -31,15 +31,15 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#27272a] bg-[#0c0c0e]/80 backdrop-blur-md sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#1f1f23] bg-[#0c0c0e]/80 backdrop-blur-md sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-zinc-500" />
           <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Nexus Chat</span>
         </div>
         {isProcessing && (
-          <div className="flex items-center gap-2 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
-            <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-            <span className="text-[9px] text-blue-400 font-mono uppercase font-bold tracking-tighter">Thinking</span>
+          <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-800/50 border border-zinc-700/50">
+            <Loader2 className="w-3 h-3 text-zinc-500 animate-spin" />
+            <span className="text-[9px] text-zinc-500 font-mono uppercase font-bold tracking-tighter">Thinking</span>
           </div>
         )}
       </div>
@@ -54,35 +54,21 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
               className={cn("flex flex-col gap-3", msg.role === "user" ? "items-end" : "items-start")}
             >
               {msg.role === "user" ? (
-                <div className="bg-blue-600/10 border border-blue-600/30 text-zinc-200 px-4 py-2.5 rounded-2xl rounded-tr-none text-[13px] max-w-[90%] shadow-sm leading-relaxed">
+                <div className="bg-[#18181b] border border-[#27272a] text-zinc-200 px-4 py-2.5 rounded-2xl rounded-tr-none text-[13px] max-w-[90%] shadow-sm leading-relaxed">
                   {msg.content}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 w-full">
                   {/* Thoughts Section */}
                   {msg.metadata?.thoughts && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 space-y-3 shadow-2xl relative overflow-hidden"
-                    >
-                      <div className="flex items-center gap-2 text-[#71717a]">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Thoughts just now</span>
-                      </div>
-                      <div className="prose prose-invert prose-xs max-w-none text-zinc-400 text-[12px] leading-relaxed italic border-l-2 border-zinc-700 pl-3 py-1">
-                        <ReactMarkdown>
-                          {msg.metadata.thoughts}
-                        </ReactMarkdown>
-                      </div>
-                    </motion.div>
+                    <CollapsibleThought thoughts={msg.metadata.thoughts} />
                   )}
 
                   {/* Message Content */}
                   {msg.content && (
                     <div className="pl-2 space-y-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="p-1 bg-purple-600/20 border border-purple-600/40 rounded text-purple-400">
+                        <div className="p-1 bg-purple-600/10 border border-purple-600/20 rounded text-purple-400">
                           <Bot className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Assistant</span>
@@ -116,9 +102,9 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
         </AnimatePresence>
       </div>
 
-      <div className="p-4 bg-[#0c0c0e] border-t border-[#27272a]">
+      <div className="p-4 bg-[#0c0c0e] border-t border-[#1f1f23]">
         <form onSubmit={handleSubmit} className="relative group">
-          <div className="absolute inset-0 bg-blue-600/5 blur-xl group-focus-within:bg-blue-600/10 transition-all rounded-2xl -z-10" />
+          <div className="absolute inset-0 bg-white/5 blur-xl group-focus-within:bg-white/10 transition-all rounded-2xl -z-10" />
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -129,27 +115,67 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
               }
             }}
             placeholder="Ask anything..."
-            className="w-full bg-[#18181b]/80 backdrop-blur-sm text-zinc-100 border border-[#27272a] focus:border-blue-500/50 rounded-2xl p-4 pr-14 text-[13px] placeholder:text-zinc-600 focus:outline-none transition-all resize-none h-[110px] shadow-sm active:scale-[0.99] font-sans"
+            className="w-full bg-[#18181b]/80 backdrop-blur-sm text-zinc-100 border border-[#27272a] focus:border-zinc-500 rounded-2xl p-4 pr-14 text-[13px] placeholder:text-zinc-600 focus:outline-none transition-all resize-none h-[110px] shadow-sm active:scale-[0.99] font-sans"
           />
           <div className="absolute bottom-4 right-4 flex items-center gap-2">
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 disabled:opacity-50 transition-all shadow-lg active:scale-95 disabled:hover:bg-blue-600 group/btn"
+              className="p-2.5 bg-zinc-100 text-zinc-900 rounded-xl hover:bg-white disabled:opacity-50 transition-all shadow-lg active:scale-95 group/btn"
             >
-              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-white/50" /> : <Send className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />}
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-zinc-400" /> : <Send className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />}
             </button>
           </div>
         </form>
         <div className="mt-3 flex items-center justify-between px-1">
-          <span className="text-[10px] text-zinc-600 font-medium">Shift + Enter for new line</span>
+          <span className="text-[10px] text-zinc-600 font-medium tracking-tight">Shift + Enter for new line</span>
           <div className="flex items-center gap-1.5 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
-            <Bot className="w-3 h-3" />
-            <span className="text-[10px] text-zinc-500">Nexus AI Engine v1.5</span>
+            <Bot className="w-3 h-3 text-zinc-500" />
+            <span className="text-[10px] text-zinc-500 font-mono tracking-tighter">Nexus Engine v1.5</span>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CollapsibleThought({ thoughts }: { thoughts: string }) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden shadow-2xl relative"
+    >
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800 transition-colors"
+      >
+        <div className="flex items-center gap-2 text-[#71717a]">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Thoughts just now</span>
+        </div>
+        <ChevronRight className={cn("w-3.5 h-3.5 text-zinc-600 transition-transform", isOpen && "rotate-90")} />
+      </button>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-4 pb-4"
+          >
+            <div className="prose prose-invert prose-xs max-w-none text-zinc-400 text-[12px] leading-relaxed border-l-2 border-zinc-700 pl-3 pt-1">
+              <ReactMarkdown>
+                {thoughts}
+              </ReactMarkdown>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -166,7 +192,7 @@ function StepItem({ step }: { step: Step }) {
     >
       <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
         {isRunning ? (
-          <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+          <Loader2 className="w-3 h-3 text-zinc-400 animate-spin" />
         ) : isCompleted ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
         ) : (
@@ -175,7 +201,7 @@ function StepItem({ step }: { step: Step }) {
       </div>
       <span className={cn(
         "text-[11px] font-medium tracking-tight h-4 flex items-center",
-        isRunning ? "text-blue-400 font-bold" : isCompleted ? "text-zinc-300" : "text-zinc-500"
+        isRunning ? "text-zinc-200 font-bold underline decoration-zinc-700 underline-offset-4" : isCompleted ? "text-zinc-300" : "text-zinc-500"
       )}>
         {step.title}
       </span>
