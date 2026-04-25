@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useImperativeHandle, forwardRef } from "react";
 import { 
   Plus, 
   Search, 
@@ -29,7 +29,11 @@ interface WorkbenchProps {
   onFileChange: (path: string, content: string) => void;
 }
 
-export function Workbench({ files, onFileSelect, currentFile, onFileChange }: WorkbenchProps) {
+export interface WorkbenchRef {
+  runCommand: (command: string) => void;
+}
+
+export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFileSelect, currentFile, onFileChange }, ref) => {
   const { instance, status } = useWebContainer();
   const [activeTab, setActiveTab] = useState<"preview" | "code" | "terminal">("preview");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,7 +41,18 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
   const terminalRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
+  const shellInputRef = useRef<any>(null);
   const [fileContent, setFileContent] = useState("");
+
+  useImperativeHandle(ref, () => ({
+    runCommand: (command: string) => {
+      if (shellInputRef.current) {
+        const writer = shellInputRef.current;
+        writer.write(command + "\n");
+        setActiveTab("terminal");
+      }
+    }
+  }));
 
   const findFile = useCallback((nodes: FileNode[], path: string): FileNode | null => {
     for (const node of nodes) {
@@ -82,31 +97,50 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
     termInstance.current = term;
     fitAddon.current = fit;
 
+    let shellProcess: any = null;
+
     const startShell = async () => {
-      const process = await instance.spawn("jsh", {
-        terminal: { cols: term.cols, rows: term.rows }
-      });
+      try {
+        shellProcess = await instance.spawn("jsh", {
+          terminal: { cols: term.cols, rows: term.rows }
+        });
 
-      process.output.pipeTo(new WritableStream({
-        write(data) { term.write(data); }
-      }));
+        shellProcess.output.pipeTo(new WritableStream({
+          write(data) { term.write(data); }
+        }));
 
-      const input = process.input.getWriter();
-      term.onData(data => input.write(data));
+        const input = shellProcess.input.getWriter();
+        shellInputRef.current = input;
 
-      window.addEventListener("resize", () => {
-        fit.fit();
-        process.resize({ cols: term.cols, rows: term.rows });
-      });
+        const onDataListener = term.onData(data => {
+          input.write(data);
+        });
+
+        const handleResize = () => {
+          fit.fit();
+          shellProcess.resize({ cols: term.cols, rows: term.rows });
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+          window.removeEventListener("resize", handleResize);
+          onDataListener.dispose();
+          shellProcess?.kill();
+        };
+      } catch (err) {
+        console.error("Failed to start shell:", err);
+      }
     };
 
-    startShell();
+    const cleanupPromise = startShell();
 
     instance.on("server-ready", (port, url) => {
       setPreviewUrl(url);
     });
 
     return () => {
+      cleanupPromise.then(cleanup => cleanup?.());
       term.dispose();
       termInstance.current = null;
     };
@@ -258,7 +292,7 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
       </div>
     </div>
   );
-}
+});
 
 function FileTreeItem({ node, onSelect, selectedPath, depth = 0 }: { node: FileNode, onSelect: (path: string) => void, selectedPath: string | null, depth?: number }) {
   const [isOpen, setIsOpen] = useState(depth === 0);

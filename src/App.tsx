@@ -6,14 +6,15 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { WebContainerProvider, useWebContainer } from "./contexts/WebContainerContext";
 import { ChatInterface } from "./components/ChatInterface";
-import { Workbench } from "./components/Workbench";
+import { Workbench, WorkbenchRef } from "./components/Workbench";
 import { Message, FileNode, Step } from "./types";
 import { chatStream } from "./services/geminiService";
-import { Loader2 } from "lucide-react";
+import { Loader2, Terminal as TerminalIcon } from "lucide-react";
 import { cn } from "./lib/utils";
 
 function Root() {
   const { instance, status, error: containerError } = useWebContainer();
+  const workbenchRef = React.useRef<WorkbenchRef>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -114,7 +115,19 @@ function Root() {
           });
         }
 
-        // Match <command>...</command>
+        // Match <delete path="..." />
+        const deleteRegex = /<delete path="([^"]+)"\s*\/>/g;
+        while ((match = deleteRegex.exec(assistantContent)) !== null) {
+          const path = match[1];
+          steps.push({
+            id: `delete-${path}`,
+            title: `Deleting ${path.split("/").pop()}`,
+            status: "completed",
+            type: "file",
+            path,
+            content: ""
+          });
+        }
         const cmdRegex = /<command>([\s\S]*?)<\/command>/g;
         while ((match = cmdRegex.exec(assistantContent)) !== null) {
           const cmd = match[1].trim();
@@ -128,12 +141,44 @@ function Root() {
         }
 
         setMessages(prev => prev.map(m => 
-          m.id === assistantId ? { ...m, content: assistantContent.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, "").trim(), steps } : m
+          m.id === assistantId ? { 
+            ...m, 
+            content: assistantContent
+              .replace(/<file path="[^"]+">[\s\S]*?<\/file>/g, "")
+              .replace(/<delete path="[^"]+"\s*\/>/g, "")
+              .replace(/<command>[\s\S]*?<\/command>/g, "")
+              .replace(/<thought>[\s\S]*?<\/thought>/g, "")
+              .trim(), 
+            steps 
+          } : m
         ));
       }
 
-      // Final Sync
-      const finalFiles = [...files];
+      // Final Sync - Handle Deletes first
+      let finalFiles = [...files];
+      const deleteRegex = /<delete path="([^"]+)"\s*\/>/g;
+      let dMatch;
+      while ((dMatch = deleteRegex.exec(assistantContent)) !== null) {
+        const path = dMatch[1];
+        const deleteNode = (nodes: FileNode[], pathParts: string[]): FileNode[] => {
+          const name = pathParts[0];
+          const isLast = pathParts.length === 1;
+          
+          return nodes.reduce((acc, n) => {
+            if (n.name === name) {
+              if (isLast) return acc;
+              if (n.children) {
+                return [...acc, { ...n, children: deleteNode(n.children, pathParts.slice(1)) }];
+              }
+            }
+            return [...acc, n];
+          }, [] as FileNode[]);
+        };
+        const pathParts = path.replace(/^\//, "").split("/");
+        finalFiles = deleteNode(finalFiles, pathParts);
+      }
+
+      // Final Sync - Handle Files
       const fileRegex = /<file path="([^"]+)">([\s\S]*?)<\/file>/g;
       let fMatch;
       while ((fMatch = fileRegex.exec(assistantContent)) !== null) {
@@ -163,17 +208,19 @@ function Root() {
         };
 
         const pathParts = path.replace(/^\//, "").split("/");
-        updateNode(finalFiles, pathParts, code, "");
+        finalFiles = updateNode(finalFiles, pathParts, code, "");
       }
       setFiles(finalFiles);
 
-      if (instance) {
+      // Execute commands after a small delay to ensure files are written to WebContainer
+      if (workbenchRef.current) {
         const cmdRegex = /<command>([\s\S]*?)<\/command>/g;
-        while ((fMatch = cmdRegex.exec(assistantContent)) !== null) {
-          const cmdStr = fMatch[1].trim();
-          const cmdParts = cmdStr.split(" ");
-          const [exe, ...args] = cmdParts;
-          await instance.spawn(exe, args);
+        let cMatch;
+        while ((cMatch = cmdRegex.exec(assistantContent)) !== null) {
+          const cmdStr = cMatch[1].trim();
+          setTimeout(() => {
+            workbenchRef.current?.runCommand(cmdStr);
+          }, 500);
         }
       }
 
@@ -250,6 +297,7 @@ function Root() {
         </aside>
         <section className="flex-1 overflow-hidden bg-[#09090b]">
           <Workbench 
+            ref={workbenchRef}
             files={files} 
             currentFile={currentFile} 
             onFileSelect={setCurrentFile}
