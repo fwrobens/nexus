@@ -38,7 +38,7 @@ I am setting up the routing structure...
 
 export async function chatStream(prompt: string, history: any[] = []) {
   const chat = ai.chats.create({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.5-flash",
     config: {
       systemInstruction: SYSTEM_PROMPT
     },
