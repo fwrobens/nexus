@@ -18,7 +18,7 @@ function Root() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! I am Nexus, your expert app builder. Tell me what you want to build and I'll generate the full React codebase and run it for you.",
+      content: "Hello! I am Nexus, your expert App builder. Tell me what you want to build and I'll generate the full React codebase and run it for you.",
       timestamp: Date.now()
     }
   ]);
