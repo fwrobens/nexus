@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { WebContainer } from "@webcontainer/api";
 
 interface WebContainerContextType {
@@ -9,20 +9,33 @@ interface WebContainerContextType {
 
 const WebContainerContext = createContext<WebContainerContextType | undefined>(undefined);
 
+let webcontainerInstancePromise: Promise<WebContainer> | null = null;
+
 export function WebContainerProvider({ children }: { children: React.ReactNode }) {
   const [instance, setInstance] = useState<WebContainer | null>(null);
   const [status, setStatus] = useState<"idle" | "booting" | "ready" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let container: WebContainer;
-
     async function boot() {
       if (instance) return;
       
+      // Check for cross-origin isolation
+      if (typeof window !== "undefined" && !window.crossOriginIsolated) {
+        console.error("SharedArrayBuffer transfer requires self.crossOriginIsolated. Check COOP/COEP headers.");
+        setError("Cross-origin isolation is not enabled. WebContainers require COOP/COEP headers to be set on the server.");
+        setStatus("error");
+        return;
+      }
+
       try {
         setStatus("booting");
-        container = await WebContainer.boot();
+        
+        if (!webcontainerInstancePromise) {
+          webcontainerInstancePromise = WebContainer.boot();
+        }
+        
+        const container = await webcontainerInstancePromise;
         setInstance(container);
         setStatus("ready");
       } catch (err) {
@@ -33,13 +46,7 @@ export function WebContainerProvider({ children }: { children: React.ReactNode }
     }
 
     boot();
-
-    return () => {
-      // teardown is expensive, usually not needed in SPA during component lifecycle
-      // but good for cleanliness if we were doing hard reloads
-      // container?.teardown(); 
-    };
-  }, []);
+  }, [instance]);
 
   return (
     <WebContainerContext.Provider value={{ instance, status, error }}>

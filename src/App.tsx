@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "./lib/utils";
 
 function Root() {
-  const { instance, status } = useWebContainer();
+  const { instance, status, error: containerError } = useWebContainer();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -93,7 +93,7 @@ function Root() {
       const stream = await chatStream(content, messages.concat(userMsg));
       
       for await (const chunk of stream) {
-        const text = chunk.text();
+        const text = chunk.text || "";
         assistantContent += text;
 
         const steps: Step[] = [];
@@ -184,15 +184,37 @@ function Root() {
     }
   };
 
-  if (status === "booting") {
+  if (status === "booting" || status === "error") {
     return (
-      <div className="h-screen w-screen bg-[#050505] flex flex-col items-center justify-center gap-6">
+      <div className="h-screen w-screen bg-[#050505] flex flex-col items-center justify-center gap-6 p-10">
         <div className="relative">
-          <div className="w-16 h-16 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+          {status === "booting" ? (
+            <div className="w-16 h-16 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+          ) : (
+            <div className="w-16 h-16 rounded-full border-2 border-red-500 flex items-center justify-center text-red-500 font-bold text-2xl">!</div>
+          )}
         </div>
-        <div className="space-y-1 text-center font-mono">
+        <div className="space-y-4 text-center font-mono max-w-xl">
           <h1 className="text-white text-lg font-medium tracking-tight uppercase">Nexus v1.0.0</h1>
-          <p className="text-[#6B6B6B] text-xs">Isolating environment and booting runtime...</p>
+          {status === "booting" ? (
+            <p className="text-[#6B6B6B] text-xs">Isolating environment and booting runtime...</p>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-red-400 text-xs py-2 px-4 bg-red-400/10 border border-red-400/20 rounded">
+                CRITICAL_RUNTIME_ERROR: {containerError}
+              </p>
+              <div className="text-[#6B6B6B] text-[10px] space-y-2 leading-relaxed">
+                <p>WebContainers require a Cross-Origin Isolated environment.</p>
+                <p>If you are seeing this, please ensure the application is opened in its own tab and not within a restricted iframe.</p>
+                <button 
+                  onClick={() => window.open(window.location.href, '_blank')}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded border border-white/10 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  Open in New Tab
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

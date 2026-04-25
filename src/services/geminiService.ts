@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string }) as any;
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
 const SYSTEM_PROMPT = `
 You are Nexus, an expert AI Full-Stack Developer. Your goal is to build high-quality, modern React applications based on user prompts.
@@ -37,18 +37,17 @@ I am setting up the routing structure...
 `;
 
 export async function chatStream(prompt: string, history: any[] = []) {
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-2.0-flash-exp", 
-    systemInstruction: SYSTEM_PROMPT
-  });
-
-  const chat = model.startChat({
+  const chat = ai.chats.create({
+    model: "gemini-3-flash-preview",
+    config: {
+      systemInstruction: SYSTEM_PROMPT
+    },
     history: history.map(m => ({
       role: m.role === "user" ? "user" : "model",
       parts: [{ text: m.content }]
     }))
   });
 
-  const result = await chat.sendMessageStream(prompt);
-  return result.stream;
+  const stream = await chat.sendMessageStream({ message: prompt });
+  return stream;
 }
