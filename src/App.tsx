@@ -105,9 +105,21 @@ function Root() {
         while ((match = fileRegex.exec(assistantContent)) !== null) {
           const path = match[1];
           const code = match[2];
+          const fileName = path.split("/").pop();
+          
+          // Check if this file already exists to decide between "Creating" or "Updating"
+          const isExisting = (nodes: FileNode[], pathParts: string[]): boolean => {
+            const name = pathParts[0];
+            const node = nodes.find(n => n.name === name);
+            if (!node) return false;
+            if (pathParts.length === 1) return true;
+            return isExisting(node.children || [], pathParts.slice(1));
+          };
+          const existingFile = isExisting(files, path.replace(/^\//, "").split("/"));
+
           steps.push({
             id: `file-${path}`,
-            title: `Synthesizing ${path.split("/").pop()}`,
+            title: `${existingFile ? "Updating" : "Creating"} ${fileName}`,
             status: "completed",
             type: "file",
             path,
@@ -121,7 +133,7 @@ function Root() {
           const path = match[1];
           steps.push({
             id: `delete-${path}`,
-            title: `Deleting ${path.split("/").pop()}`,
+            title: `Removing ${path.split("/").pop()}`,
             status: "completed",
             type: "file",
             path,
@@ -132,9 +144,9 @@ function Root() {
         while ((match = cmdRegex.exec(assistantContent)) !== null) {
           const cmd = match[1].trim();
           steps.push({
-            id: `cmd-${cmd}`,
-            title: "System Execution",
-            status: "pending",
+            id: `cmd-${cmd}-${Date.now()}`,
+            title: `Executing: ${cmd}`,
+            status: "completed",
             type: "command",
             content: cmd
           });
