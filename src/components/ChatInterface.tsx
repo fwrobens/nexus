@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Terminal as TerminalIcon, Code, Eye, Loader2, CheckCircle2, ChevronRight, Play, Sparkles, MessageSquare, Bot } from "lucide-react";
+import { Send, Terminal as TerminalIcon, Code, Eye, Loader2, CheckCircle2, ChevronRight, Play } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { Message, Step } from "@/src/types";
@@ -31,94 +31,51 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#27272a] bg-[#0c0c0e]/80 backdrop-blur-md sticky top-0 z-10">
+      <div className="flex items-center px-4 py-2 border-b border-[#27272a] bg-[#0c0c0e]">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-zinc-500" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Nexus Chat</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#52525b]">Nexus Chat</span>
         </div>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        {messages.map((msg) => (
+          <div key={msg.id} className={cn("flex flex-col", msg.role === "user" ? "items-start" : "items-start")}>
+            <div className={cn(
+              "w-full rounded-lg px-3 py-2.5 text-[13px] leading-relaxed border",
+              msg.role === "user" ? "bg-[#18181b] border-[#27272a] text-white" : "bg-[#18181b]/40 border-[#27272a] text-[#a1a1aa]"
+            )}>
+              <span className={cn(
+                "font-bold mr-2 text-[11px] uppercase tracking-tighter",
+                msg.role === "user" ? "text-blue-400" : "text-purple-400"
+              )}>
+                {msg.role === "user" ? "User:" : "Nexus:"}
+              </span>
+              <div className="prose prose-invert prose-xs max-w-none inline">
+                <ReactMarkdown>
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+            {msg.steps && msg.steps.length > 0 && (
+              <div className="mt-3 w-full space-y-1.5">
+                <div className="text-[10px] uppercase font-bold text-[#52525b] tracking-widest mb-2">Process Stack</div>
+                {msg.steps.map((step) => (
+                  <StepItem key={step.id} step={step} />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
         {isProcessing && (
-          <div className="flex items-center gap-2 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
-            <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-            <span className="text-[9px] text-blue-400 font-mono uppercase font-bold tracking-tighter">Thinking</span>
+          <div className="flex items-center gap-2 text-[#52525b] text-[10px] px-1 font-mono">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>SEQUENCING_LOGIC...</span>
           </div>
         )}
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <motion.div 
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cn("flex flex-col gap-3", msg.role === "user" ? "items-end" : "items-start")}
-            >
-              {msg.role === "user" ? (
-                <div className="bg-blue-600/10 border border-blue-600/30 text-zinc-200 px-4 py-2.5 rounded-2xl rounded-tr-none text-[13px] max-w-[90%] shadow-sm leading-relaxed">
-                  {msg.content}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4 w-full">
-                  {/* Thoughts Section */}
-                  {msg.metadata?.thoughts && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 space-y-3 shadow-2xl relative overflow-hidden"
-                    >
-                      <div className="flex items-center gap-2 text-[#71717a]">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Thoughts just now</span>
-                      </div>
-                      <div className="prose prose-invert prose-xs max-w-none text-zinc-400 text-[12px] leading-relaxed italic border-l-2 border-zinc-700 pl-3 py-1">
-                        <ReactMarkdown>
-                          {msg.metadata.thoughts}
-                        </ReactMarkdown>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Message Content */}
-                  {msg.content && (
-                    <div className="pl-2 space-y-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="p-1 bg-purple-600/20 border border-purple-600/40 rounded text-purple-400">
-                          <Bot className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Assistant</span>
-                      </div>
-                      <div className="prose prose-invert prose-xs max-w-none text-zinc-300 text-[13px] leading-relaxed ml-7">
-                        <ReactMarkdown>
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Steps/Progress */}
-                  {msg.steps && msg.steps.length > 0 && (
-                    <div className="ml-7 space-y-2 mt-2">
-                       <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900/50 rounded-md border border-zinc-800/50 w-fit">
-                        <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-pulse" />
-                        <span className="text-[9px] uppercase font-bold text-zinc-500 tracking-widest">Process Stack</span>
-                      </div>
-                      <div className="space-y-1.5 pl-2 border-l border-zinc-800">
-                        {msg.steps.map((step) => (
-                          <StepItem key={step.id} step={step} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      <div className="p-4 bg-[#0c0c0e] border-t border-[#27272a]">
-        <form onSubmit={handleSubmit} className="relative group">
-          <div className="absolute inset-0 bg-blue-600/5 blur-xl group-focus-within:bg-blue-600/10 transition-all rounded-2xl -z-10" />
+      <form onSubmit={handleSubmit} className="p-4 border-t border-[#27272a] bg-[#0c0c0e]">
+        <div className="relative">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -128,27 +85,20 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
                 handleSubmit(e);
               }
             }}
-            placeholder="Ask anything..."
-            className="w-full bg-[#18181b]/80 backdrop-blur-sm text-zinc-100 border border-[#27272a] focus:border-blue-500/50 rounded-2xl p-4 pr-14 text-[13px] placeholder:text-zinc-600 focus:outline-none transition-all resize-none h-[110px] shadow-sm active:scale-[0.99] font-sans"
+            placeholder="Ask for modifications..."
+            className="w-full bg-[#18181b] text-white border border-blue-500/30 rounded-lg p-3 text-[12px] placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 transition-all resize-none h-24"
           />
-          <div className="absolute bottom-4 right-4 flex items-center gap-2">
+          <div className="absolute bottom-2 right-2 flex gap-2">
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 disabled:opacity-50 transition-all shadow-lg active:scale-95 disabled:hover:bg-blue-600 group/btn"
+              className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50 transition-colors"
             >
-              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-white/50" /> : <Send className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />}
+              <Send className="w-3.5 h-3.5" />
             </button>
           </div>
-        </form>
-        <div className="mt-3 flex items-center justify-between px-1">
-          <span className="text-[10px] text-zinc-600 font-medium">Shift + Enter for new line</span>
-          <div className="flex items-center gap-1.5 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
-            <Bot className="w-3 h-3" />
-            <span className="text-[10px] text-zinc-500">Nexus AI Engine v1.5</span>
-          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -156,26 +106,22 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
 function StepItem({ step }: { step: Step }) {
   const isRunning = step.status === "running";
   const isCompleted = step.status === "completed";
-  const isPending = step.status === "pending";
   
   return (
     <motion.div
-      initial={{ opacity: 0, x: -5 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="flex items-center gap-3 py-0.5"
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2 text-[11px]"
     >
-      <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
-        {isRunning ? (
-          <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
-        ) : isCompleted ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-        ) : (
-          <div className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
-        )}
-      </div>
+      {isRunning ? (
+        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      ) : isCompleted ? (
+        <span className="text-green-500 font-bold w-3">✓</span>
+      ) : (
+        <span className="w-3"></span>
+      )}
       <span className={cn(
-        "text-[11px] font-medium tracking-tight h-4 flex items-center",
-        isRunning ? "text-blue-400 font-bold" : isCompleted ? "text-zinc-300" : "text-zinc-500"
+        isRunning ? "text-blue-400" : isCompleted ? "text-zinc-300" : "text-zinc-500"
       )}>
         {step.title}
       </span>
