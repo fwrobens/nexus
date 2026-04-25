@@ -310,7 +310,7 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
               "absolute bottom-4 right-4 z-30 p-2 rounded-lg transition-all shadow-xl flex items-center gap-2 active:scale-95 border",
               isTerminalOpen 
                 ? "bg-zinc-100 text-zinc-900 border-zinc-200" 
-                : "bg-[#18181b] text-zinc-400 border-[#27272a] hover:text-zinc-100 hover:border-zinc-700"
+                : "bg-[#18181b] text-zinc-400 border-[#27272a] hover:text-zinc-100 hover:border-zinc-700 shadow-2xl"
             )}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
@@ -385,7 +385,7 @@ function FileTreeItem({ node, onSelect, selectedPath, depth = 0 }: { node: FileN
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         className={cn(
           "flex items-center gap-2 py-1 px-2 rounded cursor-pointer transition-colors group h-7",
-          isSelected ? "bg-blue-500/10 border-r-2 border-blue-500 text-blue-400" : "hover:bg-[#18181b] text-[#71717a] hover:text-white"
+          isSelected ? "bg-zinc-800 text-white font-bold" : "hover:bg-[#18181b] text-[#71717a] hover:text-white"
         )}
       >
         {node.type === "directory" ? (
@@ -417,11 +417,11 @@ function TabButton({ active, icon: Icon, label, onClick }: { active: boolean, ic
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-4 h-full text-[11px] font-medium transition-colors border-b-2",
-        active ? "text-white border-blue-500 bg-[#18181b]" : "text-[#71717a] border-transparent hover:bg-[#18181b]"
+        "flex items-center gap-2 px-4 h-full text-[11px] font-bold uppercase tracking-widest transition-all border-b-2",
+        active ? "text-white border-white bg-[#18181b] shadow-[inset_0_-10px_20px_-10px_rgba(255,255,255,0.05)]" : "text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-[#18181b]"
       )}
     >
-      <Icon className="w-3 h-3" />
+      <Icon className={cn("w-3.5 h-3.5", active ? "text-white" : "text-zinc-600")} />
       {label}
     </button>
   );

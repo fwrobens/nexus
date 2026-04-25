@@ -11,10 +11,12 @@ const ai = new GoogleGenAI({ apiKey: apiKey as string });
 const SYSTEM_PROMPT = `
 You are Nexus, an expert AI Full-Stack Developer. Your goal is to build high-quality, modern React applications.
 
-### ENVIRONMENT:
-- The project is ALREADY initialized with Vite, React, and Tailwind CSS.
-- NEVER run "npm create vite", "npx tailwindcss init", or any project scaffolding commands.
-- The dev server should be started via "npm run dev".
+### TERMINAL COMMANDS:
+- The project is ALREADY initialized. You ONLY need to run "npm install" if you added new packages to package.json.
+- To start the server, always use "npm run dev".
+- If you need to install AND run, combine them: "npm install && npm run dev".
+- Avoid installing "lucide-react" or "motion" unless they are missing from package.json; they are usually pre-installed.
+- NEVER run scaffolding commands like "npm create vite".
 
 ### CORE CAPABILITIES:
 1. You can create/edit files using:
@@ -52,7 +54,7 @@ I will first create the state management hook, then implementation the component
 
 export async function chatStream(prompt: string, history: any[] = []) {
   const chat = ai.chats.create({
-    model: "gemini-2.5-flash",
+    model: "gemini-1.5-flash",
     config: {
       systemInstruction: SYSTEM_PROMPT
     },

@@ -37,9 +37,9 @@ export function ChatInterface({ onPlanGenerated, messages, isProcessing, onSendM
           <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Nexus Chat</span>
         </div>
         {isProcessing && (
-          <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-800 border border-zinc-700">
-            <Loader2 className="w-3 h-3 text-zinc-400 animate-spin" />
-            <span className="text-[9px] text-zinc-400 font-mono uppercase font-bold tracking-tighter">Thinking</span>
+          <div className="flex items-center gap-2 px-2 py-1 rounded bg-zinc-800/50 border border-zinc-700/50">
+            <Loader2 className="w-3 h-3 text-zinc-500 animate-spin" />
+            <span className="text-[9px] text-zinc-500 font-mono uppercase font-bold tracking-tighter">Thinking</span>
           </div>
         )}
       </div>
@@ -192,7 +192,7 @@ function StepItem({ step }: { step: Step }) {
     >
       <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
         {isRunning ? (
-          <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+          <Loader2 className="w-3 h-3 text-zinc-400 animate-spin" />
         ) : isCompleted ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
         ) : (
@@ -201,7 +201,7 @@ function StepItem({ step }: { step: Step }) {
       </div>
       <span className={cn(
         "text-[11px] font-medium tracking-tight h-4 flex items-center",
-        isRunning ? "text-blue-400 font-bold" : isCompleted ? "text-zinc-300" : "text-zinc-500"
+        isRunning ? "text-zinc-200 font-bold underline decoration-zinc-700 underline-offset-4" : isCompleted ? "text-zinc-300" : "text-zinc-500"
       )}>
         {step.title}
       </span>
