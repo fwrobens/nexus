@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useImperativeHandle, forwardRef } from "react";
 import { 
   Plus, 
   Search, 
@@ -29,7 +29,11 @@ interface WorkbenchProps {
   onFileChange: (path: string, content: string) => void;
 }
 
-export function Workbench({ files, onFileSelect, currentFile, onFileChange }: WorkbenchProps) {
+export interface WorkbenchRef {
+  runCommand: (command: string) => void;
+}
+
+export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFileSelect, currentFile, onFileChange }, ref) => {
   const { instance, status } = useWebContainer();
   const [activeTab, setActiveTab] = useState<"preview" | "code" | "terminal">("preview");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,7 +41,17 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
   const terminalRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
+  const shellInputRef = useRef<any>(null);
   const [fileContent, setFileContent] = useState("");
+
+  useImperativeHandle(ref, () => ({
+    runCommand: (command: string) => {
+      if (shellInputRef.current) {
+        shellInputRef.current.write(command + "\n");
+        setActiveTab("terminal");
+      }
+    }
+  }));
 
   const findFile = useCallback((nodes: FileNode[], path: string): FileNode | null => {
     for (const node of nodes) {
@@ -92,6 +106,7 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
       }));
 
       const input = process.input.getWriter();
+      shellInputRef.current = input;
       term.onData(data => input.write(data));
 
       window.addEventListener("resize", () => {
@@ -258,7 +273,7 @@ export function Workbench({ files, onFileSelect, currentFile, onFileChange }: Wo
       </div>
     </div>
   );
-}
+});
 
 function FileTreeItem({ node, onSelect, selectedPath, depth = 0 }: { node: FileNode, onSelect: (path: string) => void, selectedPath: string | null, depth?: number }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
