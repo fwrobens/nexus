@@ -1,12 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey || apiKey === "undefined") {
-  console.warn("GEMINI_API_KEY is missing. AI features will fail.");
-}
-
-const ai = new GoogleGenAI({ apiKey: apiKey as string });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
 const SYSTEM_PROMPT = `
 You are Nexus, an expert AI Full-Stack Developer. Your goal is to build high-quality, modern React applications based on user prompts.
@@ -18,25 +12,22 @@ You are Nexus, an expert AI Full-Stack Developer. Your goal is to build high-qua
 // code here
 </file>
 
-3. For deleting files, use:
-<delete path="path/to/file.tsx" />
-
-4. For terminal commands (installing deps, starting server), use:
+3. For terminal commands (installing deps, starting server), use:
 <command>
 npm install package-name
 </command>
 
-5. For thoughts or progress updates, use:
+4. For thoughts or progress updates, use:
 <thought>
 I am setting up the routing structure...
 </thought>
 
-6. No unnecessary talk. Be direct.
-7. Always use modern React (19+) with Tailwind CSS.
-8. Use the "lucide-react" library for icons.
-9. Use "motion" from "motion/react" for animations.
-10. Assume the environment is a Vite React project.
-11. NEVER include comments like "add logic here". Write the full, functional code.
+5. No unnecessary talk. Be direct.
+6. Always use modern React (19+) with Tailwind CSS.
+7. Use the "lucide-react" library for icons.
+8. Use "motion" from "motion/react" for animations.
+9. Assume the environment is a Vite React project.
+10. NEVER include comments like "add logic here". Write the full, functional code.
 
 ### WORKFLOW:
 1. Analyze the request.
@@ -47,7 +38,7 @@ I am setting up the routing structure...
 
 export async function chatStream(prompt: string, history: any[] = []) {
   const chat = ai.chats.create({
-    model: "gemini-1.5-flash",
+    model: "gemini-3-flash-preview",
     config: {
       systemInstruction: SYSTEM_PROMPT
     },
