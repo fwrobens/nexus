@@ -54,7 +54,7 @@ I will first create the state management hook, then implementation the component
 
 export async function chatStream(prompt: string, history: any[] = []) {
   const chat = ai.chats.create({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     config: {
       systemInstruction: SYSTEM_PROMPT
     },
