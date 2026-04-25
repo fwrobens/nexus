@@ -38,7 +38,6 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
   const [activeTab, setActiveTab] = useState<"preview" | "code" | "terminal">("preview");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
@@ -50,7 +49,7 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
       if (shellInputRef.current) {
         const writer = shellInputRef.current;
         writer.write(command + "\n");
-        setIsTerminalOpen(true);
+        setActiveTab("terminal");
       }
     }
   }));
@@ -186,7 +185,7 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
         {/* Editor/Preview Header */}
         <div className="flex items-center justify-between h-11 bg-[#0c0c0e] border-b border-[#1f1f23] px-2 shrink-0">
           <div className="flex items-center h-full gap-1 overflow-x-auto scrollbar-hide">
-            <TabButton 
+             <TabButton 
               active={activeTab === "code"} 
               icon={Code} 
               label="Editor" 
@@ -203,14 +202,14 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
           <div className="flex items-center gap-2">
             {currentFile && (
               <div className="flex items-center gap-2 px-3 py-1 bg-[#18181b] rounded-md border border-[#27272a]">
-                <File className="w-3 h-3 text-zinc-500" />
+                <File className="w-3 h-3 text-blue-400" />
                 <span className="text-[10px] text-zinc-400 truncate max-w-[200px] font-mono leading-none">{currentFile}</span>
               </div>
             )}
             {currentFile && activeTab === "code" && (
               <button 
                 onClick={handleSave}
-                className="flex items-center h-7 gap-2 px-3 rounded-md bg-white text-zinc-900 hover:bg-zinc-200 text-[11px] font-bold uppercase tracking-wider transition-all shadow-lg active:scale-95"
+                className="flex items-center h-7 gap-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold uppercase tracking-wider transition-all shadow-lg active:scale-95"
               >
                 <Save className="w-3.5 h-3.5" />
                 Save
@@ -236,7 +235,7 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
         </div>
 
         {/* Content Pane and Bottom Panel Container */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Main Content Pane */}
           <div className="flex-1 relative bg-[#09090b] overflow-hidden">
             <AnimatePresence mode="wait">
@@ -287,7 +286,7 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
                         value={fileContent}
                         onChange={(e) => setFileContent(e.target.value)}
                         spellCheck={false}
-                        className="flex-1 bg-transparent text-[#d4d4d8] p-4 font-mono text-[14px] leading-[1.6] resize-none focus:outline-none overflow-y-auto scrollbar-hide selection:bg-zinc-500/30"
+                        className="flex-1 bg-transparent text-[#d4d4d8] p-4 font-mono text-[14px] leading-[1.6] resize-none focus:outline-none overflow-y-auto scrollbar-hide selection:bg-blue-500/30"
                       />
                     </div>
                   ) : (
@@ -303,29 +302,14 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
             </AnimatePresence>
           </div>
 
-          {/* Persistent Terminal Toggle Button */}
-          <button 
-            onClick={() => setIsTerminalOpen(!isTerminalOpen)}
-            className={cn(
-              "absolute bottom-4 right-4 z-30 p-2 rounded-lg transition-all shadow-xl flex items-center gap-2 active:scale-95 border",
-              isTerminalOpen 
-                ? "bg-zinc-100 text-zinc-900 border-zinc-200" 
-                : "bg-[#18181b] text-zinc-400 border-[#27272a] hover:text-zinc-100 hover:border-zinc-700 shadow-2xl"
-            )}
-          >
-            <TerminalIcon className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest px-1">Terminal</span>
-          </button>
-
           {/* Bottom Pane (Terminal) */}
-          <motion.div 
-            initial={false}
-            animate={{ height: isTerminalOpen ? 300 : 0 }}
-            className="border-t border-[#1f1f23] bg-[#0c0c0e] flex flex-col shrink-0 overflow-hidden z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
-          >
+          <div className={cn(
+             "h-[280px] border-t border-[#1f1f23] bg-[#0c0c0e] flex flex-col shrink-0 transition-all z-20",
+             activeTab === "terminal" ? "relative" : "invisible h-0"
+          )}>
             <div className="h-9 border-b border-[#1f1f23] px-4 flex items-center justify-between shrink-0 bg-[#0c0c0e]/50 backdrop-blur-sm">
               <div className="flex items-center gap-2">
-                <TerminalIcon className="w-3.5 h-3.5 text-zinc-400" />
+                <TerminalIcon className="w-3.5 h-3.5 text-blue-400" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Terminal Shell</span>
               </div>
               <div className="flex items-center gap-3">
@@ -335,13 +319,10 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
                  </div>
                  <div className="h-3 w-px bg-zinc-800 mx-1" />
                  <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-tighter">node v20.x</span>
-                 <button onClick={() => setIsTerminalOpen(false)} className="ml-2 hover:text-white transition-colors">
-                    <ChevronDown className="w-3.5 h-3.5" />
-                 </button>
               </div>
             </div>
             <div ref={terminalRef} className="flex-1 p-3 overflow-hidden terminal-container" />
-          </motion.div>
+          </div>
         </div>
 
         {/* Status Bar */}
@@ -352,7 +333,6 @@ export const Workbench = forwardRef<WorkbenchRef, WorkbenchProps>(({ files, onFi
               <span>Project Nexus</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
               <span>Main</span>
             </div>
           </div>
@@ -385,7 +365,7 @@ function FileTreeItem({ node, onSelect, selectedPath, depth = 0 }: { node: FileN
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         className={cn(
           "flex items-center gap-2 py-1 px-2 rounded cursor-pointer transition-colors group h-7",
-          isSelected ? "bg-zinc-800 text-white font-bold" : "hover:bg-[#18181b] text-[#71717a] hover:text-white"
+          isSelected ? "bg-blue-500/10 border-r-2 border-blue-500 text-blue-400" : "hover:bg-[#18181b] text-[#71717a] hover:text-white"
         )}
       >
         {node.type === "directory" ? (
@@ -417,11 +397,11 @@ function TabButton({ active, icon: Icon, label, onClick }: { active: boolean, ic
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-4 h-full text-[11px] font-bold uppercase tracking-widest transition-all border-b-2",
-        active ? "text-white border-white bg-[#18181b] shadow-[inset_0_-10px_20px_-10px_rgba(255,255,255,0.05)]" : "text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-[#18181b]"
+        "flex items-center gap-2 px-4 h-full text-[11px] font-medium transition-colors border-b-2",
+        active ? "text-white border-blue-500 bg-[#18181b]" : "text-[#71717a] border-transparent hover:bg-[#18181b]"
       )}
     >
-      <Icon className={cn("w-3.5 h-3.5", active ? "text-white" : "text-zinc-600")} />
+      <Icon className="w-3 h-3" />
       {label}
     </button>
   );

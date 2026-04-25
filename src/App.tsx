@@ -105,21 +105,9 @@ function Root() {
         while ((match = fileRegex.exec(assistantContent)) !== null) {
           const path = match[1];
           const code = match[2];
-          const fileName = path.split("/").pop();
-          
-          // Check if this file already exists to decide between "Creating" or "Updating"
-          const isExisting = (nodes: FileNode[], pathParts: string[]): boolean => {
-            const name = pathParts[0];
-            const node = nodes.find(n => n.name === name);
-            if (!node) return false;
-            if (pathParts.length === 1) return true;
-            return isExisting(node.children || [], pathParts.slice(1));
-          };
-          const existingFile = isExisting(files, path.replace(/^\//, "").split("/"));
-
           steps.push({
             id: `file-${path}`,
-            title: `${existingFile ? "Updating" : "Creating"} ${fileName}`,
+            title: `Synthesizing ${path.split("/").pop()}`,
             status: "completed",
             type: "file",
             path,
@@ -133,7 +121,7 @@ function Root() {
           const path = match[1];
           steps.push({
             id: `delete-${path}`,
-            title: `Removing ${path.split("/").pop()}`,
+            title: `Deleting ${path.split("/").pop()}`,
             status: "completed",
             type: "file",
             path,
@@ -144,9 +132,9 @@ function Root() {
         while ((match = cmdRegex.exec(assistantContent)) !== null) {
           const cmd = match[1].trim();
           steps.push({
-            id: `cmd-${cmd}-${Date.now()}`,
-            title: `Executing: ${cmd}`,
-            status: "completed",
+            id: `cmd-${cmd}`,
+            title: "System Execution",
+            status: "pending",
             type: "command",
             content: cmd
           });
@@ -165,8 +153,10 @@ function Root() {
               .replace(/<file path="[^"]+">[\s\S]*?<\/file>/g, "")
               .replace(/<delete path="[^"]+"\s*\/>/g, "")
               .replace(/<command>[\s\S]*?<\/command>/g, "")
-              // Strip any partially open tags and everything after them
-              .replace(/<(thought|file|command|delete)[\s\S]*$/g, "")
+              .replace(/<thought>[\s\S]*?$/g, "") // Handle incomplete tags
+              .replace(/<file path="[^"]*$/g, "")
+              .replace(/<delete path="[^"]*$/g, "")
+              .replace(/<command>[\s\S]*?$/g, "")
               .trim(), 
             steps,
             metadata: { ...m.metadata, thoughts }
@@ -293,8 +283,8 @@ function Root() {
       <header className="h-10 border-b border-[#1f1f23] bg-[#0c0c0e] flex items-center justify-between px-3 shrink-0 select-none">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-5 h-5 bg-zinc-100 rounded-md flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-              <Code className="w-3 h-3 text-zinc-900" />
+            <div className="w-5 h-5 bg-blue-600 rounded-md flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
+              <Code className="w-3 h-3 text-white" />
             </div>
             <span className="text-[11px] font-bold text-white tracking-widest uppercase">Nexus<span className="text-zinc-600 font-normal">.AI</span></span>
           </div>
@@ -309,11 +299,11 @@ function Root() {
         </div>
 
         <div className="flex-1 max-w-[400px] mx-4 relative group">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-600 group-focus-within:text-zinc-400 transition-colors" />
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-600 group-focus-within:text-blue-500 transition-colors" />
            <input 
              type="text" 
              placeholder="Search project..."
-             className="w-full h-7 bg-[#18181b] border border-[#27272a] rounded-md pl-9 pr-4 text-[11px] focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-700"
+             className="w-full h-7 bg-[#18181b] border border-[#27272a] rounded-md pl-9 pr-4 text-[11px] focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-zinc-700"
            />
         </div>
 
@@ -325,7 +315,7 @@ function Root() {
             )} />
             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">Container: {status}</span>
           </div>
-          <button className="h-7 bg-zinc-100 border border-zinc-200 text-zinc-900 text-[10px] font-bold px-4 rounded-md hover:bg-white transition-all uppercase tracking-widest active:scale-95 shadow-sm">
+          <button className="h-7 bg-blue-600/10 border border-blue-600/30 text-blue-400 text-[10px] font-bold px-4 rounded-md hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest active:scale-95 shadow-sm">
             Deploy App
           </button>
         </div>
